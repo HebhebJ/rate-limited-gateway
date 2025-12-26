@@ -25,3 +25,10 @@ management:
     web:
       exposure:
         include: health,info
+
+app:
+  security:
+    api-key-header: X-API-Key
+    valid-api-keys:
+      - dev-key-123
+      - dev-key-456

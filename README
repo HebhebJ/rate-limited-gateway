@@ -1,0 +1,33 @@
+Made two spring boot projects
+docker up redis
+made route in gateway to reach demo
+add API Key enforcement (gateway blocks requests without a valid X-API-Key). This is milestone M1
+
+
+############### Notes ##############
+In production:
+API Gateway = policy enforcement layer
+Responsibilities:
+Authentication
+Rate limiting
+Logging
+Circuit breaking
+Routing
+Real examples
+
+Spring Cloud Gateway → Netflix, Alibaba, VMware
+
+AWS API Gateway → same concepts (API keys + throttling)
+
+Kong / Traefik / Envoy → same patterns
+
+Kubernetes Ingress + Gateway API → same responsibilities
+
+What changes in prod
+Dev	Prod
+Keys in YAML	Keys in Redis / DB
+Manual restart	Dynamic reload
+Few clients	Thousands
+Simple logs	Structured + metrics
+
+But the design stays identical.
