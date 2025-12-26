@@ -1,6 +1,7 @@
 package com.devsecops.gateway.logging;
 
 import java.util.UUID;
+import org.slf4j.MDC;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,6 +54,8 @@ public class CorrelationLoggingFilter implements GlobalFilter, Ordered {
         String apiKey = mutatedExchange.getRequest().getHeaders().getFirst(API_KEY);
 
         return chain.filter(mutatedExchange)
+                .doFirst(() -> MDC.put("correlationId", correlationId))
+                .doFinally(sig -> MDC.remove("correlationId"))
                 .doFinally(signalType -> {
                     HttpStatusCode sc = mutatedExchange.getResponse().getStatusCode();
                     int status = (sc != null) ? sc.value() : 200;

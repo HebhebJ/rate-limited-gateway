@@ -32,13 +32,19 @@ spring:
               args:
                 redis-rate-limiter.replenishRate: 5
                 redis-rate-limiter.burstCapacity: 10
-                key-resolver: "#{@apiKeyResolver}"
+                key-resolver: "#{@apiKeyOrIpResolver}"
 
 management:
   endpoints:
     web:
       exposure:
         include: health,info
+  tracing:
+    sampling:
+      probability: 1.0   # dev: trace everything
+  otlp:
+    tracing:
+      endpoint: http://localhost:4318/v1/traces
 
 app:
   security:
@@ -46,7 +52,7 @@ app:
     valid-api-keys:
       - dev-key-123
       - dev-key-456
-      
+
 resilience4j:
   circuitbreaker:
     instances:

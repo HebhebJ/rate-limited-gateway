@@ -1,56 +1,233 @@
-Made two spring boot projects
-docker up redis
-made route in gateway to reach demo
+🚀 Rate-Limited API Gateway (Spring Cloud Gateway + Redis)
 
-add API Key enforcement (gateway blocks requests without a valid X-API-Key).  This is milestone M1
-Add Rate limiting per API key Backed by Redis -- Automatic 429 Too Many Requests.  This is milestone M2
-Correlation ID propagation works: every request log shows corrId=something → gateway is keeping/forwarding your tracing id..  This is milestone M3
-Circuit Breaker + Fallback fallback in real systems: timestamp + status + stable error code + human message + correlationId. (M4)
-############### Notes ##############
-In production:
-API Gateway = policy enforcement layer
-Responsibilities:
-Authentication
-Rate limiting
-Logging
-Circuit breaking
-Routing
-Real examples
+A production-grade API Gateway built with Spring Cloud Gateway, demonstrating real-world gateway patterns used in modern microservice architectures.
 
-Spring Cloud Gateway → Netflix, Alibaba, VMware
+This project focuses on security, resilience, and observability, not just routing.
 
-AWS API Gateway → same concepts (API keys + throttling)
+🧱 Architecture Overview
+Client
+  │
+  │  HTTP requests
+  ▼
+┌────────────────────────┐
+│   API Gateway Service  │
+│  (Spring Cloud Gateway)│
+│                        │
+│  • API Key Auth        │
+│  • Rate Limiting       │── Redis
+│  • Circuit Breaker     │
+│  • Request Logging     │
+│  • Correlation IDs     │
+│  • OpenTelemetry       │── Jaeger
+└───────────┬────────────┘
+            │
+            ▼
+     Demo Backend Service
 
-Kong / Traefik / Envoy → same patterns
+🧩 Services
+1️⃣ Gateway Service
 
-Kubernetes Ingress + Gateway API → same responsibilities
+Port: 8080
 
-What changes in prod
-Dev	Prod
-Keys in YAML	Keys in Redis / DB
-Manual restart	Dynamic reload
-Few clients	Thousands
-Simple logs	Structured + metrics
+Acts as the single entry point to backend services.
 
-But the design stays identical.
+2️⃣ Demo Service
+
+Port: 8081
+
+A simple backend used to test routing, failures, and observability.
+
+✅ Features Implemented
+🔐 API Key Authentication
+
+Requests must include X-API-Key
+
+Missing or invalid key → 401 Unauthorized
+
+Keys are configurable via application.yml
+
+🚦 Distributed Rate Limiting (Redis)
+
+Token Bucket algorithm
+
+Backed by Redis (safe for multiple gateway instances)
+
+Rate limits enforced:
+
+Per API key (authenticated requests)
+
+Fallback per IP (when API key logic is allowed)
+
+Returns standard headers:
+
+X-RateLimit-Remaining
+
+X-RateLimit-Burst-Capacity
+
+X-RateLimit-Replenish-Rate
+
+🔁 Circuit Breaker + Fallback (Resilience4j)
+
+Automatically opens when backend fails or times out
+
+Prevents cascading failures
+
+Returns a graceful fallback response:
+
+{
+  "status": 503,
+  "error": "upstream_unavailable",
+  "message": "Fallback response from gateway",
+  "correlationId": "..."
+}
+
+🧠 Correlation IDs (Tracing-Friendly)
+
+Every request gets a X-Correlation-Id
+
+Generated automatically if missing
+
+Propagated:
+
+Gateway logs
+
+Downstream services
+
+Fallback responses
+
+Returned to the client for debugging
+
+🧾 Structured JSON Logging
+
+Logs are emitted in JSON format
+
+Ready for:
+
+ELK
+
+Loki
+
+Datadog
+
+Each log includes:
+
+correlationId
+
+HTTP status
+
+latency (ms)
+
+method & path
+
+masked API key
+
+Example:
+
+{
+  "message": "corrId=... status=429 ms=6 method=GET path=/api/hello",
+  "app": "gateway-service"
+}
+
+🔍 Distributed Tracing (OpenTelemetry)
+
+Uses Micrometer Tracing + OpenTelemetry
+
+Exports traces to Jaeger
+
+Visualizes:
+
+Request latency
+
+Errors
+
+Circuit breaker behavior
+
+Correlation ID aligns with trace ID for easy debugging
+
+🛠 Tech Stack
+
+Java 17
+
+Spring Boot 3
+
+Spring Cloud Gateway
+
+Redis
+
+Resilience4j
+
+Micrometer + OpenTelemetry
+
+Jaeger
+
+Logstash Logback Encoder
+
+▶️ How to Run
+1️⃣ Start Redis
+docker run -d -p 6379:6379 redis
+
+2️⃣ Start Jaeger
+docker run -d --name jaeger \
+  -p 16686:16686 \
+  -p 4318:4318 \
+  jaegertracing/all-in-one:1.53
 
 
-2) Correlation ID vs “session”
+Jaeger UI: http://localhost:16686
 
-Correlation ID: used to follow one request across gateway → service → DB logs.
+3️⃣ Run Demo Service
+cd demo-service
+mvn spring-boot:run
 
-If you want “same session/user”, that’s auth token (JWT), API key, or client id.
+4️⃣ Run Gateway Service
+cd gateway-service
+mvn spring-boot:run
 
-3) What pros do in real systems
+🧪 Example Request
+curl http://localhost:8080/api/hello \
+  -H "X-API-Key: dev-key-123"
 
-They log a mix of:
+Rate limit exceeded:
+HTTP/1.1 429 Too Many Requests
+X-RateLimit-Remaining: 0
 
-traceId/correlationId (request tracking)
+🎯 What This Project Demonstrates
 
-principal/userId (from JWT) or apiKeyId (not the raw key)
+This project showcases real-world backend & platform engineering skills:
 
-clientIp (usually from X-Forwarded-For / Forwarded)
+API Gateway design
 
-sometimes user-agent
+Secure defaults
 
-sometimes tenantId (multi-tenant)
+Distributed rate limiting
+
+Failure isolation
+
+Observability (logs + traces)
+
+Production-style error handling
+
+This is not a tutorial toy project — it reflects patterns used in real microservice platforms.
+
+🚀 Possible Extensions
+
+Per-API-key tiers (free vs premium)
+
+JWT authentication
+
+Public vs private routes
+
+Metrics dashboards (Prometheus + Grafana)
+
+Kubernetes deployment
+
+👤 Author: IHEB JLASSI
+
+Built as a learning + portfolio project to deepen understanding of:
+
+Spring Cloud Gateway internals
+
+Distributed systems
+
+DevOps & platform engineering practices
+

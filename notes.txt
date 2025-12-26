@@ -1,0 +1,68 @@
+
+Made two spring boot projects
+docker up redis
+made route in gateway to reach demo
+
+add API Key enforcement (gateway blocks requests without a valid X-API-Key).  This is milestone M1
+Add Rate limiting per API key Backed by Redis -- Automatic 429 Too Many Requests.  This is milestone M2
+Correlation ID propagation works: every request log shows corrId=something → gateway is keeping/forwarding your tracing id..  This is milestone M3
+Circuit Breaker + Fallback fallback in real systems: timestamp + status + stable error code + human message + correlationId. (M4)
+Added Structured JSON logs Distributed tracing (OpenTelemetry + Jaeger) (M5)
+
+You now have a production-grade API Gateway with:
+
+✅ API key authentication
+✅ Redis-based distributed rate limiting
+✅ Per-request correlation IDs
+✅ Structured JSON logs
+✅ Distributed tracing (OpenTelemetry + Jaeger)
+✅ Circuit breaker + fallback
+✅ Clean 503 degradation responses
+############### Notes ##############
+In production:
+API Gateway = policy enforcement layer
+Responsibilities:
+Authentication
+Rate limiting
+Logging
+Circuit breaking
+Routing
+Real examples
+
+Spring Cloud Gateway → Netflix, Alibaba, VMware
+
+AWS API Gateway → same concepts (API keys + throttling)
+
+Kong / Traefik / Envoy → same patterns
+
+Kubernetes Ingress + Gateway API → same responsibilities
+
+What changes in prod
+Dev	Prod
+Keys in YAML	Keys in Redis / DB
+Manual restart	Dynamic reload
+Few clients	Thousands
+Simple logs	Structured + metrics
+
+But the design stays identical.
+
+
+2) Correlation ID vs “session”
+
+Correlation ID: used to follow one request across gateway → service → DB logs.
+
+If you want “same session/user”, that’s auth token (JWT), API key, or client id.
+
+3) What pros do in real systems
+
+They log a mix of:
+
+traceId/correlationId (request tracking)
+
+principal/userId (from JWT) or apiKeyId (not the raw key)
+
+clientIp (usually from X-Forwarded-For / Forwarded)
+
+sometimes user-agent
+
+sometimes tenantId (multi-tenant)

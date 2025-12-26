@@ -5,7 +5,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
-@Component("apiKeyResolver")
 public class ApiKeyResolver implements KeyResolver {
 
     private static final String HEADER = "X-API-Key";
