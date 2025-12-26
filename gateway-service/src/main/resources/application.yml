@@ -19,6 +19,11 @@ spring:
             - Path=/api/**
           filters:
             - StripPrefix=1
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 5
+                redis-rate-limiter.burstCapacity: 10
+                key-resolver: "#{@apiKeyResolver}"
 
 management:
   endpoints:
