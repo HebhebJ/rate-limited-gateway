@@ -12,6 +12,11 @@ spring:
 
   cloud:
     gateway:
+      filter:
+        request-rate-limiter:
+          deny-empty-key: true
+          empty-key-status: 401
+
       routes:
         - id: demo-route
           uri: http://localhost:8081
@@ -19,6 +24,10 @@ spring:
             - Path=/api/**
           filters:
             - StripPrefix=1
+            - name: CircuitBreaker
+              args:
+                name: demoCB
+                fallbackUri: forward:/fallback/demo
             - name: RequestRateLimiter
               args:
                 redis-rate-limiter.replenishRate: 5
@@ -37,3 +46,18 @@ app:
     valid-api-keys:
       - dev-key-123
       - dev-key-456
+      
+resilience4j:
+  circuitbreaker:
+    instances:
+      demoCB:
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 2
+  timelimiter:
+    instances:
+      demoCB:
+        timeoutDuration: 2s
